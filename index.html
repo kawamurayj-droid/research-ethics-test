@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>研究倫理テスト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Old+Mincho:wght@700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1d3557; --ink-soft:#35557f; --paper:#fbfcfe; --grid:#e6ecf3;
+  --pencil:#566270; --line:#d3dce7; --ok:#2f7d5b; --ok-bg:#e8f3ed;
+  --ng:#b8433a; --ng-bg:#f9ebe9; --stamp:#c0392b; --hl:#fff4c7;
+  --sans:"BIZ UDPGothic","Hiragino Kaku Gothic ProN","Yu Gothic",Meiryo,sans-serif;
+  --serif:"Zen Old Mincho","Yu Mincho","Hiragino Mincho ProN",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:var(--sans); color:var(--ink); line-height:1.75; font-size:16px;
+  background-color:var(--paper);
+  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
+  background-size:24px 24px;
+}
+header{background:var(--ink);color:#fff;padding:12px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+header h1{font-size:1.05rem;margin:0;font-weight:700;letter-spacing:.04em}
+header .who{margin-left:auto;font-size:.85rem;opacity:.9}
+header button{background:transparent;color:#fff;border:1px solid rgba(255,255,255,.5);padding:4px 12px;border-radius:4px;font:inherit;font-size:.85rem;cursor:pointer}
+main{max-width:860px;margin:0 auto;padding:24px 16px 80px}
+.sheet{background:#fff;border:1px solid var(--line);border-radius:6px;padding:24px;margin-bottom:20px}
+h2{font-size:1.3rem;margin:0 0 12px}
+h3{font-size:1.05rem;margin:20px 0 8px}
+p{margin:0 0 12px}
+.muted{color:var(--pencil);font-size:.9rem}
+.btn{display:inline-block;background:var(--ink);color:#fff;border:none;border-radius:4px;padding:10px 20px;font:inherit;font-weight:700;cursor:pointer}
+.btn:hover{background:var(--ink-soft)}
+.btn:disabled{background:#9aa6b4;cursor:not-allowed}
+.btn.sub{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.btn.small{padding:6px 12px;font-size:.85rem;font-weight:400}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+:focus-visible{outline:3px solid #f2b705;outline-offset:2px}
+label.f{display:block;font-size:.9rem;margin:12px 0 4px}
+input[type=text]{width:100%;padding:10px;border:1px solid var(--line);border-radius:4px;font:inherit}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.err{background:var(--ng-bg);color:var(--ng);padding:10px 14px;border-radius:4px;margin:12px 0}
+.info{background:var(--hl);padding:10px 14px;border-radius:4px;margin:12px 0}
+
+/* テスト */
+.progress{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff;padding:8px 16px;border-radius:0 0 6px 6px;display:flex;align-items:center;gap:12px;font-size:.9rem;margin:-24px 0 20px}
+.bar{flex:1;height:6px;background:rgba(255,255,255,.25);border-radius:3px;overflow:hidden}
+.bar i{display:block;height:100%;background:#f2b705;width:0;transition:width .2s}
+.q{border-top:1px dashed var(--line);padding:18px 0}
+.q:first-of-type{border-top:none}
+.qn{font-weight:700;color:var(--pencil);font-size:.85rem}
+.qt{margin:4px 0 10px}
+.blank{display:inline-block;min-width:4.5em;border-bottom:2px solid var(--ink);text-align:center;margin:0 2px;background:var(--hl)}
+.choices{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.choices label{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:4px;padding:8px 12px;cursor:pointer;background:#fff}
+.choices label:has(input:checked){border-color:var(--ink);background:#eef3fa;font-weight:700}
+.choices input{accent-color:var(--ink)}
+
+/* 結果 */
+.score{display:flex;align-items:center;gap:24px;flex-wrap:wrap}
+.score .num{font-size:3rem;font-weight:700;line-height:1}
+.score .num small{font-size:1.2rem;color:var(--pencil)}
+.stamp{width:108px;height:108px;border:4px solid var(--stamp);border-radius:50%;color:var(--stamp);display:flex;align-items:center;justify-content:center;flex-direction:column;font-family:var(--serif);font-weight:700;transform:rotate(-10deg);flex:none;animation:press .35s ease-out}
+.stamp b{font-size:1.9rem;line-height:1.1}
+.stamp span{font-size:.7rem;border-top:1px solid var(--stamp);padding-top:2px}
+@keyframes press{from{transform:rotate(-10deg) scale(1.6);opacity:0}to{transform:rotate(-10deg) scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.stamp{animation:none}.bar i{transition:none}}
+.res{display:grid;grid-template-columns:2.2em 1fr;gap:4px 10px;padding:12px 0;border-top:1px dashed var(--line)}
+.mark{font-size:1.4rem;font-weight:700;text-align:center}
+.mark.o{color:var(--ok)} .mark.x{color:var(--ng)}
+.yours{font-size:.9rem;color:var(--pencil)}
+.res.x .yours b{color:var(--ng)}
+.key{color:var(--ok);font-weight:700}
+
+/* 表 */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;white-space:nowrap}
+th{background:#f2f5f9;font-weight:700}
+td.wrap{white-space:normal;min-width:12em}
+tr.click{cursor:pointer}
+tr.click:hover td{background:#f5f8fc}
+.tag{display:inline-block;padding:1px 8px;border-radius:10px;font-size:.8rem}
+.tag.pass{background:var(--ok-bg);color:var(--ok)}
+.tag.doing{background:var(--hl);color:#7a5a00}
+.tag.none{background:#eef0f3;color:var(--pencil)}
+.mini{display:inline-block;height:8px;background:var(--ink-soft);border-radius:2px;vertical-align:middle;margin-right:6px}
+.mini.full{background:var(--ok)}
+
+/* 教員 */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.stats div{background:#fff;border:1px solid var(--line);border-radius:6px;padding:12px}
+.stats b{display:block;font-size:1.6rem;line-height:1.2}
+.stats span{font-size:.8rem;color:var(--pencil)}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--ink);margin-bottom:0;flex-wrap:wrap}
+.tabs button{background:#fff;border:1px solid var(--line);border-bottom:none;padding:8px 16px;font:inherit;cursor:pointer;border-radius:6px 6px 0 0;color:var(--pencil)}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tabpane{border-top:none;border-radius:0 0 6px 6px}
+@media (max-width:600px){
+  .choices{grid-template-columns:1fr}
+  .row2{grid-template-columns:1fr}
+  .stats{grid-template-columns:1fr 1fr}
+  .sheet{padding:18px 14px}
+  .progress{margin:-18px -0px 16px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>研究倫理テスト</h1>
+  <span class="who" id="who"></span>
+  <button id="logoutBtn" style="display:none" onclick="logout()">ログアウト</button>
+</header>
+<main id="app"><div class="sheet"><p>読み込み中です…</p></div></main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+/* =========================================================
+   設定（ここだけ書き換えてください）
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyBRX-yNEhbMAxgJ1voMfc5HDw0VhndNW8o",
+  authDomain: "research-ethics-test.firebaseapp.com",
+  databaseURL: "https://research-ethics-test-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "research-ethics-test",
+  storageBucket: "research-ethics-test.firebasestorage.app",
+  messagingSenderId: "979216831158",
+  appId: "1:979216831158:web:0901d03f845e9f48470c17"
+};
+// 教員画面を開けるGoogleアカウント（複数可）
+const TEACHER_EMAILS = ["kawamurayj@nbu.ac.jp"];
+// ログインを許可するドメイン
+const ALLOWED_DOMAIN = "nbu.ac.jp";
+
+/* =========================================================
+   問題（a が正解）
+   ========================================================= */
+const QUESTIONS = [
+ {id:1,q:"研究とは知りたいことを探し，それらをもう一度（　）する行為",c:["探索","検索","探検","検討"],a:"探索"},
+ {id:2,q:"人文社会学的研究は，私たちにとって（　）のあり方を考えることにつながる",c:["望ましい社会","あこがれる社会","生きるべく社会","生まれ変わる社会"],a:"望ましい社会"},
+ {id:3,q:"研究活動は，私たちの（　）を便利にする",c:["生活","食生活","仕事","移動"],a:"生活"},
+ {id:4,q:"研究活動は，世界と私たちに関する理解を（　）にしてくれる",c:["豊かに","幻想的に","貧相に","壮大に"],a:"豊かに"},
+ {id:5,q:"研究活動は使い方によっては，人間や生物，環境に（　）を与える",c:["悪い影響","良い影響","悪い作用","良い作用"],a:"悪い影響"},
+ {id:6,q:"研究活動の実施には，（　）が求められる",c:["慎重さ","大胆さ","極端さ","不確実さ"],a:"慎重さ"},
+ {id:7,q:"研究活動の適切な進め方を理解することは，（　）を後押しする",c:["研究活動","学習活動","教育活動","地域活動"],a:"研究活動"},
+ {id:8,q:"研究活動の適切な進め方を理解することは，研究する人自身を（　）ことにもつながる",c:["守る","励ます","元気づける","立ち直らせる"],a:"守る"},
+ {id:9,q:"研究は，注意深く物事を観察し，データを収集し，適切な方法で解析された結果を誠実に報告するという「（　）」によって成り立っている",c:["信頼","実績","信用","責任"],a:"信頼"},
+ {id:10,q:"存在しないデータ，研究結果等を作成することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],a:"ねつ造"},
+ {id:11,q:"研究資料・機器・過程を変更する操作を行い，データ，研究活動によって得られた結果等を真正でないものに加工することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],a:"改ざん"},
+ {id:12,q:"他の研究者のアイデア，分析・解析方法，データ，研究結果，論文又は用語を当該研究者の了解又は適切な表示なく流用することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],a:"盗用"},
+ {id:13,q:"（　）を十分に調べずに，過去に研究の例があるにもかかわらず，独自のアイデアと思って研究を進めている場合も，研究への信頼性を低下させる",c:["先行研究","先行事例","先行人物","先行学習"],a:"先行研究"},
+ {id:14,q:"研究を行う人が知っているべき研究倫理を知らなかったということは（　）しない",c:["通用","該当","適応","正解"],a:"通用"},
+ {id:15,q:"レポートや卒論を執筆する際に，Web上から勝手に画像やデータ，文章をコピペして用いることは（　）になる",c:["ねつ造","改ざん","盗用","目的外使用"],a:"盗用"},
+ {id:16,q:"レポートや卒論を執筆する際に，他人の画像やデータ，文章等を使用する場合は，その（　）を明記して使用する",c:["出典","出所","名前","題名"],a:"出典"},
+ {id:17,q:"研究において，（　）を立てることは，欠くことのできない重要なステップである",c:["研究計画","研究成果","研究予定","研究報告"],a:"研究計画"},
+ {id:18,q:"研究の（　）を達成しようとするうえで，研究計画をきちんと立てることが大切である",c:["目的","成果","目標","予定"],a:"目的"},
+ {id:19,q:"研究計画を立てる作業は，これまでに行われている研究内容や結果を（　）することから始まる",c:["調査・学習","検討・学習","調査・分析","検討・分析"],a:"調査・学習"},
+ {id:20,q:"研究計画を立てる際は，具体的に（　）な研究の内容を検討することが大切である",c:["実現可能","計画可能","把握可能","到達可能"],a:"実現可能"},
+ {id:21,q:"研究計画を立てる際は，研究（　）や研究実施期間，発表方法などを整理し，研究計画を作成することが大切である",c:["方法","方策","論文","報告"],a:"方法"},
+ {id:22,q:"どのようなことがすでに報告されていて，何がまだ分かっていないのか，研究する内容についての知識を得ることは，研究の（　）を確保するうえで大切である",c:["オリジナリティ","クオリティ","ユニーク","ブラッシュアップ"],a:"オリジナリティ"},
+ {id:23,q:"研究計画を立てる際は，研究の動機や研究を通じて，何を（　）を具体化することが大切である",c:["明らかにしたいか","調査したいか","記述したいか","把握したいか"],a:"明らかにしたいか"},
+ {id:24,q:"データを収集するまでには，（　）を導き出すために必要なデータの数について検討しておくことが重要である",c:["結論","序論","本論","中論"],a:"結論"},
+ {id:25,q:"データ数や収集方法が適切でないと，（　）に対する答えが得られないという問題が生じてしまう",c:["研究目的","研究方法","研究成果","研究目標"],a:"研究目的"},
+ {id:26,q:"研究の過程は，研究（　）に記録をする",c:["ノート","論文","書籍","報告"],a:"ノート"},
+ {id:27,q:"研究ノートには実験方法，実験の結果などを（　）記録していく",c:["その都度","途中で","最初に","最後に"],a:"その都度"},
+ {id:28,q:"研究ノートは十分なサンプル数の実験が終わった後に（　）をまとめるために用いることができる",c:["研究成果","研究目的","研究方法","研究対象"],a:"研究成果"},
+ {id:29,q:"研究ノートには，得られた結果通りにそのまま（　）に記録する必要がある",c:["正直","正確","不正確","真面目"],a:"正直"},
+ {id:30,q:"研究ノートを作成することは，自分たちが（　）な研究を行ってきた証拠にもなる",c:["誠実","真面目","丁寧","正確"],a:"誠実"},
+ {id:31,q:"データを分析する際には，（　）という手法を理解した上で進めることが大切である",c:["統計","集計","分析","調査"],a:"統計"},
+ {id:32,q:"データを収集しても，最後にデータ解析の問題を理解していないと，研究の（　）性が問われることにもなる",c:["信憑","信頼","信用","正確"],a:"信憑"},
+ {id:33,q:"研究成果を公表するときは，研究結果を（　）に表現することが重要である",c:["正確","現実的","几帳面","簡単"],a:"正確"},
+ {id:34,q:"一緒に（　）を行った人だけを発表のメンバーとするのが一般的である",c:["研究活動","執筆活動","研究調査","資料収集"],a:"研究活動"},
+ {id:35,q:"誠実な研究活動とは，正しい研究計画を立てて，安全で適切な方法によりデータを収集・解析し，成果を正しく発表するという「（　）」によって成り立っている",c:["信頼","信用","実績","誠実"],a:"信頼"}
+];
+const TOTAL = QUESTIONS.length;
+const QMAP = Object.fromEntries(QUESTIONS.map(q=>[q.id,q]));
+
+/* =========================================================
+   共通
+   ========================================================= */
+const $app = document.getElementById("app");
+const S = {user:null,isTeacher:false,profile:null,attempts:[],passed:null,test:null,lastResult:null,preview:false,t:null,tab:"passed"};
+const esc = s => String(s ?? "").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+const fmt = ms => ms ? new Date(ms).toLocaleString("ja-JP",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit"}) : "—";
+const dur = sec => sec==null ? "—" : (sec>=60 ? Math.floor(sec/60)+"分"+(sec%60)+"秒" : sec+"秒");
+const blankify = t => esc(t).replace("（　）",'<span class="blank">&nbsp;</span>');
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function render(html){$app.innerHTML=html;window.scrollTo(0,0);}
+function domainOK(email){email=(email||"").toLowerCase();return email.endsWith("@"+ALLOWED_DOMAIN)||email.endsWith("."+ALLOWED_DOMAIN);}
+
+if (firebaseConfig.apiKey.includes("ここに")) {
+  render(`<div class="sheet"><h2>初期設定がまだです</h2><p>index.html 冒頭の <b>firebaseConfig</b> と <b>TEACHER_EMAILS</b> を書き換えてから，もう一度開いてください。</p></div>`);
+  throw new Error("firebaseConfig 未設定");
+}
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.database();
+
+/* =========================================================
+   ログイン
+   ========================================================= */
+function viewLogin(msg){
+  document.getElementById("who").textContent="";
+  document.getElementById("logoutBtn").style.display="none";
+  render(`<div class="sheet">
+    <h2>研究倫理テスト</h2>
+    <p>卒業研究に取り組む前に，研究倫理の基本を確認するテストです。全${TOTAL}問，満点になるまで何度でも受験できます。</p>
+    <p class="muted">大学のGoogleアカウント（${ALLOWED_DOMAIN}）でログインしてください。</p>
+    ${msg?`<div class="err">${esc(msg)}</div>`:""}
+    <div class="btns"><button class="btn" onclick="login()">Googleアカウントでログイン</button></div>
+  </div>`);
+}
+function login(){
+  const p = new firebase.auth.GoogleAuthProvider();
+  p.setCustomParameters({hd:ALLOWED_DOMAIN,prompt:"select_account"});
+  auth.signInWithPopup(p).catch(e=>{
+    if(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment"){auth.signInWithRedirect(p);}
+    else if(e.code!=="auth/popup-closed-by-user"&&e.code!=="auth/cancelled-popup-request"){viewLogin("ログインできませんでした（"+e.code+"）。");}
+  });
+}
+function logout(){
+  if(S.test && !confirm("受験中の回答は保存されません。ログアウトしますか？")) return;
+  S.test=null; auth.signOut();
+}
+auth.onAuthStateChanged(async u=>{
+  if(!u){S.user=null;viewLogin();return;}
+  if(!domainOK(u.email)){await auth.signOut();viewLogin(`${u.email} ではログインできません。${ALLOWED_DOMAIN} のアカウントを使ってください。`);return;}
+  S.user=u;
+  S.isTeacher=TEACHER_EMAILS.map(e=>e.toLowerCase()).includes(u.email.toLowerCase());
+  document.getElementById("who").textContent=u.email+(S.isTeacher?"（教員）":"");
+  document.getElementById("logoutBtn").style.display="";
+  if(S.isTeacher){loadTeacher();} else {loadStudent();}
+});
+
+/* =========================================================
+   学生
+   ========================================================= */
+async function loadStudent(){
+  render(`<div class="sheet"><p>読み込み中です…</p></div>`);
+  try{
+    const uid=S.user.uid;
+    const [p,a,ps]=await Promise.all([
+      db.ref("students/"+uid).get(), db.ref("attempts/"+uid).get(), db.ref("passed/"+uid).get()
+    ]);
+    S.profile=p.val();
+    S.attempts=Object.values(a.val()||{}).sort((x,y)=>x.submittedAt-y.submittedAt);
+    S.passed=ps.val();
+    if(!S.profile) viewRegister(); else viewHome();
+  }catch(e){render(`<div class="sheet"><div class="err">データを読み込めませんでした（${esc(e.message)}）。時間をおいて再読み込みしてください。</div></div>`);}
+}
+function viewRegister(msg){
+  render(`<div class="sheet">
+    <h2>はじめに学籍番号と氏名を登録してください</h2>
+    <p class="muted">登録は最初の1回だけです。先生が受験状況を確認するときに使います。</p>
+    ${msg?`<div class="err">${esc(msg)}</div>`:""}
+    <label class="f" for="sid">学籍番号</label><input type="text" id="sid" inputmode="latin" autocomplete="off">
+    <div class="row2">
+      <div><label class="f" for="ln">姓</label><input type="text" id="ln"></div>
+      <div><label class="f" for="fn">名</label><input type="text" id="fn"></div>
+    </div>
+    <div class="btns"><button class="btn" onclick="register()">登録する</button></div>
+  </div>`);
+}
+async function register(){
+  const z2h=s=>s.replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  const sid=z2h(document.getElementById("sid").value.trim()).toUpperCase();
+  const ln=document.getElementById("ln").value.trim(), fn=document.getElementById("fn").value.trim();
+  if(!sid||!ln||!fn){viewRegister("学籍番号・姓・名をすべて入力してください。");return;}
+  const prof={studentId:sid,lastName:ln,firstName:fn,email:S.user.email,registeredAt:Date.now()};
+  try{await db.ref("students/"+S.user.uid).set(prof);S.profile=prof;viewHome();}
+  catch(e){viewRegister("登録できませんでした（"+e.message+"）。");}
+}
+function viewHome(){
+  const P=S.profile, n=S.attempts.length;
+  const best=n?Math.max(...S.attempts.map(a=>a.score)):null;
+  const rows=S.attempts.map((a,i)=>`<tr><td>${i+1}回目</td><td>${fmt(a.submittedAt)}</td><td><span class="mini ${a.score===TOTAL?"full":""}" style="width:${Math.round(a.score/TOTAL*80)}px"></span>${a.score} / ${TOTAL}</td><td>${dur(a.durationSec)}</td></tr>`).join("");
+  render(`<div class="sheet">
+    <h2>${esc(P.lastName)} ${esc(P.firstName)} さん</h2>
+    <p class="muted">学籍番号 ${esc(P.studentId)}</p>
+    ${S.passed?`<div class="score"><div class="stamp"><b>満点</b><span>${new Date(S.passed.passedAt).toLocaleDateString("ja-JP")}</span></div>
+      <div><p><b>合格済みです。</b>${S.passed.attemptNo}回目の受験で満点に到達しました。</p><p class="muted">正解一覧はいつでも見直せます。練習として再受験もできます。</p></div></div>`
+    :`<p>全${TOTAL}問の4択テストです。<b>満点になるまで何度でも受験できます。</b>不正解の問題は○×だけが表示されるので，どこを間違えたかを手がかりに考え直してください。</p>`}
+    <div class="btns">
+      <button class="btn" onclick="startTest()">${S.passed?"練習として受験する":(n?"もう一度受験する":"受験をはじめる")}</button>
+      ${S.passed?`<button class="btn sub" onclick="viewKey()">正解一覧を見る</button>`:""}
+    </div>
+  </div>
+  <div class="sheet"><h3 style="margin-top:0">受験の記録</h3>
+    ${n?`<p class="muted">受験回数 ${n}回，最高点 ${best}点</p><div class="tw"><table><tr><th>回</th><th>受験日時</th><th>得点</th><th>所要時間</th></tr>${rows}</table></div>`
+       :`<p class="muted">まだ受験していません。</p>`}
+  </div>`);
+}
+
+/* ---------- 受験 ---------- */
+function startTest(preview){
+  S.preview=!!preview;
+  S.test={order:shuffle(QUESTIONS).map(q=>({id:q.id,c:shuffle(q.c)})),ans:{},startedAt:Date.now()};
+  const items=S.test.order.map((o,i)=>{
+    const q=QMAP[o.id];
+    return `<div class="q" id="q${o.id}"><div class="qn">第${i+1}問</div><div class="qt">${blankify(q.q)}</div>
+      <div class="choices" role="radiogroup">${o.c.map(c=>`<label><input type="radio" name="r${o.id}" value="${esc(c)}" onchange="pick(${o.id},this.value)">${esc(c)}</label>`).join("")}</div></div>`;
+  }).join("");
+  render(`<div class="sheet">
+    <div class="progress"><span id="pc">0 / ${TOTAL} 回答済み</span><div class="bar"><i id="pb"></i></div></div>
+    ${S.preview?`<div class="info">プレビューです。この受験は記録されません。</div>`:""}
+    <p class="muted">（　）に入る語句を選んでください。すべて回答すると採点できます。</p>
+    ${items}
+    <div class="btns"><button class="btn" id="submitBtn" onclick="submitTest()" disabled>採点する</button>
+    <button class="btn sub" onclick="cancelTest()">中断する</button></div>
+  </div>`);
+}
+function pick(id,v){
+  S.test.ans[id]=v;
+  const k=Object.keys(S.test.ans).length;
+  document.getElementById("pc").textContent=`${k} / ${TOTAL} 回答済み`;
+  document.getElementById("pb").style.width=(k/TOTAL*100)+"%";
+  document.getElementById("submitBtn").disabled=k<TOTAL;
+}
+function cancelTest(){
+  if(!confirm("回答は保存されません。中断しますか？"))return;
+  S.test=null; S.preview?viewTeacher():viewHome();
+}
+async function submitTest(){
+  const T=S.test; if(!T)return;
+  if(Object.keys(T.ans).length<TOTAL){alert("未回答の問題があります。");return;}
+  const results=T.order.map((o,i)=>({no:i+1,id:o.id,your:T.ans[o.id],ok:T.ans[o.id]===QMAP[o.id].a}));
+  const score=results.filter(r=>r.ok).length;
+  const now=Date.now();
+  const rec={score,total:TOTAL,startedAt:T.startedAt,submittedAt:now,
+    durationSec:Math.round((now-T.startedAt)/1000),
+    wrong:results.filter(r=>!r.ok).map(r=>r.id).sort((a,b)=>a-b).join(",")};
+  S.lastResult={results,rec,saved:S.preview,error:null};
+  S.test=null;
+  if(!S.preview) await saveAttempt(rec);
+  viewResult();
+}
+async function saveAttempt(rec){
+  const uid=S.user.uid, P=S.profile;
+  try{
+    rec.attemptNo=S.attempts.length+1;
+    await db.ref("attempts/"+uid).push(rec);
+    S.attempts.push(rec);
+    if(rec.score===TOTAL && !S.passed){
+      const ps={passedAt:rec.submittedAt,attemptNo:rec.attemptNo,studentId:P.studentId,name:P.lastName+" "+P.firstName};
+      await db.ref("passed/"+uid).set(ps); S.passed=ps;
+    }
+    S.lastResult.saved=true; S.lastResult.error=null;
+  }catch(e){S.lastResult.error=e.message;}
+}
+async function retrySave(){await saveAttempt(S.lastResult.rec);viewResult();}
+function viewResult(){
+  const R=S.lastResult, full=R.rec.score===TOTAL;
+  const list=R.results.map(r=>{
+    const q=QMAP[r.id];
+    return `<div class="res ${r.ok?"o":"x"}" data-ok="${r.ok}"><div class="mark ${r.ok?"o":"x"}" aria-label="${r.ok?"正解":"不正解"}">${r.ok?"○":"×"}</div>
+      <div><div class="qn">第${r.no}問</div><div>${blankify(q.q)}</div>
+      <div class="yours">あなたの回答：<b>${esc(r.your)}</b>${full?`　<span class="key">正解：${esc(q.a)}</span>`:""}</div></div></div>`;
+  }).join("");
+  const back=S.preview?`<button class="btn sub" onclick="viewTeacher()">教員画面に戻る</button>`:`<button class="btn sub" onclick="viewHome()">マイページへ</button>`;
+  render(`<div class="sheet">
+    ${R.error?`<div class="err">結果を保存できませんでした（${esc(R.error)}）。通信状況を確認して「保存し直す」を押してください。<div class="btns"><button class="btn small" onclick="retrySave()">保存し直す</button></div></div>`:""}
+    <div class="score">
+      ${full?`<div class="stamp"><b>満点</b><span>${new Date(R.rec.submittedAt).toLocaleDateString("ja-JP")}</span></div>`:""}
+      <div><div class="num">${R.rec.score}<small> / ${TOTAL}</small></div>
+      <p>${full?"おめでとうございます。満点です。正解を確認しておきましょう。":`あと${TOTAL-R.rec.score}問です。×の問題を見直して，もう一度挑戦してください。`}</p></div>
+    </div>
+    <div class="btns">${full?"":`<button class="btn" onclick="startTest(${S.preview})">もう一度受験する</button>`}${back}</div>
+  </div>
+  <div class="sheet">
+    <h3 style="margin-top:0">${full?"解答と正解":"採点結果"}</h3>
+    ${full?"":`<label class="muted"><input type="checkbox" onchange="document.querySelectorAll('.res[data-ok=true]').forEach(e=>e.style.display=this.checked?'none':'')"> ×の問題だけ表示</label>`}
+    ${list}
+  </div>`);
+}
+function viewKey(){
+  const list=QUESTIONS.map(q=>`<div class="res o"><div class="mark o">${q.id}</div><div><div>${blankify(q.q)}</div><div class="key">正解：${esc(q.a)}</div></div></div>`).join("");
+  render(`<div class="sheet"><h2>正解一覧</h2><div class="btns" style="margin-top:0"><button class="btn sub small" onclick="viewHome()">マイページへ</button></div>${list}</div>`);
+}
+
+/* =========================================================
+   教員
+   ========================================================= */
+async function loadTeacher(){
+  render(`<div class="sheet"><p>読み込み中です…</p></div>`);
+  try{
+    const [st,at,ps]=await Promise.all([db.ref("students").get(),db.ref("attempts").get(),db.ref("passed").get()]);
+    const students=st.val()||{}, attempts=at.val()||{}, passed=ps.val()||{};
+    const list=Object.entries(students).map(([uid,p])=>{
+      const as=Object.values(attempts[uid]||{}).sort((x,y)=>x.submittedAt-y.submittedAt);
+      return {uid,...p,name:p.lastName+" "+p.firstName,attempts:as,count:as.length,
+        best:as.length?Math.max(...as.map(a=>a.score)):null,
+        last:as.length?as[as.length-1].submittedAt:null,passed:passed[uid]||null};
+    }).sort((a,b)=>String(a.studentId).localeCompare(String(b.studentId)));
+    S.t={list,loadedAt:Date.now()};
+    viewTeacher();
+  }catch(e){
+    render(`<div class="sheet"><div class="err">データを読み込めませんでした（${esc(e.message)}）。Firebaseのルールに教員のアドレスが入っているか確認してください。</div></div>`);
+  }
+}
+function status(s){return s.passed?'<span class="tag pass">満点到達</span>':(s.count?'<span class="tag doing">取り組み中</span>':'<span class="tag none">未受験</span>');}
+function viewTeacher(){
+  if(!S.t){loadTeacher();return;}
+  const L=S.t.list, P=L.filter(s=>s.passed), D=L.filter(s=>!s.passed&&s.count), N=L.filter(s=>!s.count);
+  let pane="";
+  if(S.tab==="passed"){
+    const rows=P.sort((a,b)=>a.passed.passedAt-b.passed.passedAt).map(s=>`<tr class="click" onclick="viewDetail('${s.uid}')"><td>${esc(s.studentId)}</td><td>${esc(s.name)}</td><td>${fmt(s.passed.passedAt)}</td><td>${s.passed.attemptNo}回</td></tr>`).join("");
+    pane=P.length?`<div class="tw"><table><tr><th>学籍番号</th><th>氏名</th><th>満点到達日時</th><th>到達までの受験回数</th></tr>${rows}</table></div>`:`<p class="muted">まだ満点に到達した学生はいません。</p>`;
+    pane+=`<div class="btns"><button class="btn sub small" onclick="csvPassed()">満点到達者をCSVで保存</button></div>`;
+  }else if(S.tab==="all"){
+    const rows=L.map(s=>`<tr class="click" onclick="viewDetail('${s.uid}')"><td>${esc(s.studentId)}</td><td>${esc(s.name)}</td><td>${status(s)}</td><td>${s.count}回</td><td>${s.best==null?"—":s.best+" / "+TOTAL}</td><td>${fmt(s.last)}</td></tr>`).join("");
+    pane=L.length?`<p class="muted">行を押すと，その学生の受験の経緯を確認できます。</p><div class="tw"><table><tr><th>学籍番号</th><th>氏名</th><th>状況</th><th>受験回数</th><th>最高点</th><th>最終受験</th></tr>${rows}</table></div>`:`<p class="muted">まだ登録した学生はいません。</p>`;
+    pane+=`<div class="btns"><button class="btn sub small" onclick="csvStatus()">全学生の状況をCSVで保存</button><button class="btn sub small" onclick="csvHistory()">全受験履歴をCSVで保存</button></div>`;
+  }else{
+    const cnt={},wr={};QUESTIONS.forEach(q=>{cnt[q.id]=0;wr[q.id]=0;});
+    L.forEach(s=>s.attempts.forEach(a=>{QUESTIONS.forEach(q=>cnt[q.id]++);String(a.wrong||"").split(",").filter(Boolean).forEach(id=>wr[id]=(wr[id]||0)+1);}));
+    const rows=QUESTIONS.map(q=>({q,rate:cnt[q.id]?(1-wr[q.id]/cnt[q.id]):null,w:wr[q.id]})).sort((a,b)=>(a.rate??2)-(b.rate??2))
+      .map(r=>`<tr><td>No.${r.q.id}</td><td>${r.rate==null?"—":Math.round(r.rate*100)+"%"}</td><td>${r.w}回</td><td class="wrap">${blankify(r.q.q)}<br><span class="key">正解：${esc(r.q.a)}</span></td></tr>`).join("");
+    pane=`<p class="muted">全受験を通した問題ごとの正答率です（低い順）。つまずきやすい問題の確認に使えます。</p><div class="tw"><table><tr><th>問題</th><th>正答率</th><th>誤答数</th><th>問題文</th></tr>${rows}</table></div>`;
+  }
+  const tb=(k,l)=>`<button class="${S.tab===k?"on":""}" onclick="S.tab='${k}';viewTeacher()">${l}</button>`;
+  render(`<div class="sheet"><h2>教員画面</h2>
+    <p class="muted">${fmt(S.t.loadedAt)} 時点のデータです。</p>
+    <div class="btns" style="margin-top:0"><button class="btn small" onclick="loadTeacher()">最新の状態に更新</button><button class="btn sub small" onclick="startTest(true)">学生画面でプレビュー受験（記録されません）</button></div></div>
+  <div class="stats">
+    <div><b>${L.length}</b><span>登録者</span></div><div><b>${P.length}</b><span>満点到達</span></div>
+    <div><b>${D.length}</b><span>取り組み中</span></div><div><b>${N.length}</b><span>登録のみ・未受験</span></div>
+  </div>
+  <div class="tabs">${tb("passed","満点到達者一覧")}${tb("all","全学生の状況")}${tb("q","問題別の正答率")}</div>
+  <div class="sheet tabpane">${pane}</div>`);
+}
+function viewDetail(uid){
+  const s=S.t.list.find(x=>x.uid===uid); if(!s)return;
+  const rows=s.attempts.map((a,i)=>{
+    const w=String(a.wrong||"").split(",").filter(Boolean);
+    return `<tr><td>${i+1}回目</td><td>${fmt(a.submittedAt)}</td><td><span class="mini ${a.score===TOTAL?"full":""}" style="width:${Math.round(a.score/TOTAL*80)}px"></span>${a.score} / ${TOTAL}</td><td>${dur(a.durationSec)}</td><td class="wrap">${w.length?w.map(x=>"No."+x).join("，"):"なし"}</td></tr>`;
+  }).join("");
+  const wc={};s.attempts.forEach(a=>String(a.wrong||"").split(",").filter(Boolean).forEach(id=>wc[id]=(wc[id]||0)+1));
+  const often=Object.entries(wc).filter(([,v])=>v>=2).sort((a,b)=>b[1]-a[1]);
+  render(`<div class="sheet">
+    <div class="btns" style="margin-top:0"><button class="btn sub small" onclick="viewTeacher()">一覧に戻る</button></div>
+    <h2 style="margin-top:16px">${esc(s.name)}</h2>
+    <p class="muted">学籍番号 ${esc(s.studentId)}　${esc(s.email)}　登録 ${fmt(s.registeredAt)}</p>
+    <p>${status(s)}　受験 ${s.count}回${s.passed?`，${s.passed.attemptNo}回目（${fmt(s.passed.passedAt)}）に満点到達`:""}</p>
+    ${often.length?`<div class="info">繰り返し間違えた問題：${often.map(([id,v])=>`No.${id}（${v}回）`).join("，")}</div>`:""}
+    <h3>受験の経緯</h3>
+    ${s.count?`<div class="tw"><table><tr><th>回</th><th>受験日時</th><th>得点</th><th>所要時間</th><th>間違えた問題</th></tr>${rows}</table></div>`:`<p class="muted">まだ受験していません。</p>`}
+  </div>`);
+}
+
+/* ---------- CSV ---------- */
+function dl(name,rows){
+  const csv="\uFEFF"+rows.map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\r\n");
+  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download=name;document.body.appendChild(a);a.click();a.remove();
+}
+const today=()=>new Date().toISOString().slice(0,10);
+function csvPassed(){
+  const P=S.t.list.filter(s=>s.passed).sort((a,b)=>a.passed.passedAt-b.passed.passedAt);
+  dl(`研究倫理テスト_満点到達者_${today()}.csv`,[["学籍番号","氏名","メール","満点到達日時","到達までの受験回数"],...P.map(s=>[s.studentId,s.name,s.email,fmt(s.passed.passedAt),s.passed.attemptNo])]);
+}
+function csvStatus(){
+  dl(`研究倫理テスト_学生状況_${today()}.csv`,[["学籍番号","氏名","メール","状況","受験回数","最高点","最終受験日時","満点到達日時"],
+    ...S.t.list.map(s=>[s.studentId,s.name,s.email,s.passed?"満点到達":(s.count?"取り組み中":"未受験"),s.count,s.best??"",fmt(s.last),s.passed?fmt(s.passed.passedAt):""])]);
+}
+function csvHistory(){
+  const rows=[["学籍番号","氏名","回","受験日時","得点","満点","所要時間(秒)","間違えた問題番号"]];
+  S.t.list.forEach(s=>s.attempts.forEach((a,i)=>rows.push([s.studentId,s.name,i+1,fmt(a.submittedAt),a.score,a.total,a.durationSec,String(a.wrong||"").replace(/,/g," ")])));
+  dl(`研究倫理テスト_受験履歴_${today()}.csv`,rows);
+}
+</script>
+</body>
+</html>
