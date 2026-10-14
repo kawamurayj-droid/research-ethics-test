@@ -100,6 +100,13 @@ tr.click:hover td{background:#f5f8fc}
 .tabs button{background:#fff;border:1px solid var(--line);border-bottom:none;padding:8px 16px;font:inherit;cursor:pointer;border-radius:6px 6px 0 0;color:var(--pencil)}
 .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
 .tabpane{border-top:none;border-radius:0 0 6px 6px}
+.wm{position:fixed;inset:0;z-index:50;pointer-events:none;display:none;background-repeat:repeat}
+body.protect .wm{display:block}
+body.protect main{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.shield-msg{position:fixed;inset:0;z-index:60;display:none;align-items:center;justify-content:center;background:rgba(29,53,87,.92);color:#fff;font-weight:700;text-align:center;padding:24px}
+body.protect.shield main{filter:blur(14px)}
+body.protect.shield .shield-msg{display:flex}
+@media print{body.protect main,body.protect .wm{display:none!important}body.protect::after{content:"この画面は印刷できません";display:block;padding:40px;font-size:20px}}
 @media (max-width:600px){
   .choices{grid-template-columns:1fr}
   .row2{grid-template-columns:1fr}
@@ -115,6 +122,8 @@ tr.click:hover td{background:#f5f8fc}
   <span class="who" id="who"></span>
   <button id="logoutBtn" style="display:none" onclick="logout()">ログアウト</button>
 </header>
+<div class="wm" id="wm" aria-hidden="true"></div>
+<div class="shield-msg" id="shieldMsg">画面に戻ると表示されます</div>
 <main id="app"><div class="sheet"><p>読み込み中です…</p></div></main>
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -125,13 +134,13 @@ tr.click:hover td{background:#f5f8fc}
    設定（ここだけ書き換えてください）
    ========================================================= */
 const firebaseConfig = {
-  apiKey: "AIzaSyBRX-yNEhbMAxgJ1voMfc5HDw0VhndNW8o",
-  authDomain: "research-ethics-test.firebaseapp.com",
-  databaseURL: "https://research-ethics-test-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "research-ethics-test",
-  storageBucket: "research-ethics-test.firebasestorage.app",
-  messagingSenderId: "979216831158",
-  appId: "1:979216831158:web:0901d03f845e9f48470c17"
+  apiKey: "ここに貼り付け",
+  authDomain: "ここに貼り付け",
+  databaseURL: "ここに貼り付け",
+  projectId: "ここに貼り付け",
+  storageBucket: "ここに貼り付け",
+  messagingSenderId: "ここに貼り付け",
+  appId: "ここに貼り付け"
 };
 // 教員画面を開けるGoogleアカウント（複数可）
 const TEACHER_EMAILS = ["kawamurayj@nbu.ac.jp","ootaniah@nbu.ac.jp","nabeta@nbu.ac.jp","hashimototk@nbu.ac.jp"];
@@ -139,44 +148,44 @@ const TEACHER_EMAILS = ["kawamurayj@nbu.ac.jp","ootaniah@nbu.ac.jp","nabeta@nbu.
 const ALLOWED_DOMAIN = "nbu.ac.jp";
 
 /* =========================================================
-   問題（a が正解）
+   問題（h は正解のハッシュ値。正解そのものはソースに含めない）
    ========================================================= */
 const QUESTIONS = [
- {id:1,q:"研究とは知りたいことを探し，それらをもう一度（　）する行為",c:["探索","検索","探検","検討"],a:"探索"},
- {id:2,q:"人文社会学的研究は，私たちにとって（　）のあり方を考えることにつながる",c:["望ましい社会","あこがれる社会","生きるべく社会","生まれ変わる社会"],a:"望ましい社会"},
- {id:3,q:"研究活動は，私たちの（　）を便利にする",c:["生活","食生活","仕事","移動"],a:"生活"},
- {id:4,q:"研究活動は，世界と私たちに関する理解を（　）にしてくれる",c:["豊かに","幻想的に","貧相に","壮大に"],a:"豊かに"},
- {id:5,q:"研究活動は使い方によっては，人間や生物，環境に（　）を与える",c:["悪い影響","良い影響","悪い作用","良い作用"],a:"悪い影響"},
- {id:6,q:"研究活動の実施には，（　）が求められる",c:["慎重さ","大胆さ","極端さ","不確実さ"],a:"慎重さ"},
- {id:7,q:"研究活動の適切な進め方を理解することは，（　）を後押しする",c:["研究活動","学習活動","教育活動","地域活動"],a:"研究活動"},
- {id:8,q:"研究活動の適切な進め方を理解することは，研究する人自身を（　）ことにもつながる",c:["守る","励ます","元気づける","立ち直らせる"],a:"守る"},
- {id:9,q:"研究は，注意深く物事を観察し，データを収集し，適切な方法で解析された結果を誠実に報告するという「（　）」によって成り立っている",c:["信頼","実績","信用","責任"],a:"信頼"},
- {id:10,q:"存在しないデータ，研究結果等を作成することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],a:"ねつ造"},
- {id:11,q:"研究資料・機器・過程を変更する操作を行い，データ，研究活動によって得られた結果等を真正でないものに加工することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],a:"改ざん"},
- {id:12,q:"他の研究者のアイデア，分析・解析方法，データ，研究結果，論文又は用語を当該研究者の了解又は適切な表示なく流用することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],a:"盗用"},
- {id:13,q:"（　）を十分に調べずに，過去に研究の例があるにもかかわらず，独自のアイデアと思って研究を進めている場合も，研究への信頼性を低下させる",c:["先行研究","先行事例","先行人物","先行学習"],a:"先行研究"},
- {id:14,q:"研究を行う人が知っているべき研究倫理を知らなかったということは（　）しない",c:["通用","該当","適応","正解"],a:"通用"},
- {id:15,q:"レポートや卒論を執筆する際に，Web上から勝手に画像やデータ，文章をコピペして用いることは（　）になる",c:["ねつ造","改ざん","盗用","目的外使用"],a:"盗用"},
- {id:16,q:"レポートや卒論を執筆する際に，他人の画像やデータ，文章等を使用する場合は，その（　）を明記して使用する",c:["出典","出所","名前","題名"],a:"出典"},
- {id:17,q:"研究において，（　）を立てることは，欠くことのできない重要なステップである",c:["研究計画","研究成果","研究予定","研究報告"],a:"研究計画"},
- {id:18,q:"研究の（　）を達成しようとするうえで，研究計画をきちんと立てることが大切である",c:["目的","成果","目標","予定"],a:"目的"},
- {id:19,q:"研究計画を立てる作業は，これまでに行われている研究内容や結果を（　）することから始まる",c:["調査・学習","検討・学習","調査・分析","検討・分析"],a:"調査・学習"},
- {id:20,q:"研究計画を立てる際は，具体的に（　）な研究の内容を検討することが大切である",c:["実現可能","計画可能","把握可能","到達可能"],a:"実現可能"},
- {id:21,q:"研究計画を立てる際は，研究（　）や研究実施期間，発表方法などを整理し，研究計画を作成することが大切である",c:["方法","方策","論文","報告"],a:"方法"},
- {id:22,q:"どのようなことがすでに報告されていて，何がまだ分かっていないのか，研究する内容についての知識を得ることは，研究の（　）を確保するうえで大切である",c:["オリジナリティ","クオリティ","ユニーク","ブラッシュアップ"],a:"オリジナリティ"},
- {id:23,q:"研究計画を立てる際は，研究の動機や研究を通じて，何を（　）を具体化することが大切である",c:["明らかにしたいか","調査したいか","記述したいか","把握したいか"],a:"明らかにしたいか"},
- {id:24,q:"データを収集するまでには，（　）を導き出すために必要なデータの数について検討しておくことが重要である",c:["結論","序論","本論","中論"],a:"結論"},
- {id:25,q:"データ数や収集方法が適切でないと，（　）に対する答えが得られないという問題が生じてしまう",c:["研究目的","研究方法","研究成果","研究目標"],a:"研究目的"},
- {id:26,q:"研究の過程は，研究（　）に記録をする",c:["ノート","論文","書籍","報告"],a:"ノート"},
- {id:27,q:"研究ノートには実験方法，実験の結果などを（　）記録していく",c:["その都度","途中で","最初に","最後に"],a:"その都度"},
- {id:28,q:"研究ノートは十分なサンプル数の実験が終わった後に（　）をまとめるために用いることができる",c:["研究成果","研究目的","研究方法","研究対象"],a:"研究成果"},
- {id:29,q:"研究ノートには，得られた結果通りにそのまま（　）に記録する必要がある",c:["正直","正確","不正確","真面目"],a:"正直"},
- {id:30,q:"研究ノートを作成することは，自分たちが（　）な研究を行ってきた証拠にもなる",c:["誠実","真面目","丁寧","正確"],a:"誠実"},
- {id:31,q:"データを分析する際には，（　）という手法を理解した上で進めることが大切である",c:["統計","集計","分析","調査"],a:"統計"},
- {id:32,q:"データを収集しても，最後にデータ解析の問題を理解していないと，研究の（　）性が問われることにもなる",c:["信憑","信頼","信用","正確"],a:"信憑"},
- {id:33,q:"研究成果を公表するときは，研究結果を（　）に表現することが重要である",c:["正確","現実的","几帳面","簡単"],a:"正確"},
- {id:34,q:"一緒に（　）を行った人だけを発表のメンバーとするのが一般的である",c:["研究活動","執筆活動","研究調査","資料収集"],a:"研究活動"},
- {id:35,q:"誠実な研究活動とは，正しい研究計画を立てて，安全で適切な方法によりデータを収集・解析し，成果を正しく発表するという「（　）」によって成り立っている",c:["信頼","信用","実績","誠実"],a:"信頼"}
+ {id:1,q:"研究とは知りたいことを探し，それらをもう一度（　）する行為",c:["探索","検索","探検","検討"],h:"bc8efac751f6598fb748c46eaf22045d8fb348ca19f8b4ac2940b73b75e0f6e7"},
+ {id:2,q:"人文社会学的研究は，私たちにとって（　）のあり方を考えることにつながる",c:["望ましい社会","あこがれる社会","生きるべく社会","生まれ変わる社会"],h:"cf8373674cd8d6c6f922193e0b08b4c145b3f92e909b74ab7f7e6bf5f5db3052"},
+ {id:3,q:"研究活動は，私たちの（　）を便利にする",c:["生活","食生活","仕事","移動"],h:"da7abf28a17d23bd5ba4d74d772f1a79c4739a15e3384054f44b5df46ea98ff3"},
+ {id:4,q:"研究活動は，世界と私たちに関する理解を（　）にしてくれる",c:["豊かに","幻想的に","貧相に","壮大に"],h:"f4b347912c9d1071f4d705f15bde03871ac782a91bd8414f35cac6b627a11757"},
+ {id:5,q:"研究活動は使い方によっては，人間や生物，環境に（　）を与える",c:["悪い影響","良い影響","悪い作用","良い作用"],h:"3a85e75830ceec0f50f8a47b1e4a4c0fc8e0236c53e379f2a2438ed5609c2fbd"},
+ {id:6,q:"研究活動の実施には，（　）が求められる",c:["慎重さ","大胆さ","極端さ","不確実さ"],h:"3b760f0e16622573c9aa251150170df4cd990f6d51fde794ab9235cb3c97a870"},
+ {id:7,q:"研究活動の適切な進め方を理解することは，（　）を後押しする",c:["研究活動","学習活動","教育活動","地域活動"],h:"13137c1804667ca2e79f2871b2d55501868b29c5822ce804c018a8263e6f15a9"},
+ {id:8,q:"研究活動の適切な進め方を理解することは，研究する人自身を（　）ことにもつながる",c:["守る","励ます","元気づける","立ち直らせる"],h:"2b22801eaa9694efb0eec49086320b1ce80711b0624f5ea99acad2a0165a8336"},
+ {id:9,q:"研究は，注意深く物事を観察し，データを収集し，適切な方法で解析された結果を誠実に報告するという「（　）」によって成り立っている",c:["信頼","実績","信用","責任"],h:"ed83b137ab92c952d700fb4e45948a8180c6fdf6c7ac1b97da72b7a7cd139d32"},
+ {id:10,q:"存在しないデータ，研究結果等を作成することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],h:"b7d1e0139cd4244360a0e9b9a85c0908f8f554f7cf4c23049f5306994cbc3bda"},
+ {id:11,q:"研究資料・機器・過程を変更する操作を行い，データ，研究活動によって得られた結果等を真正でないものに加工することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],h:"79135e484f107a24867ed3cc57984fa63d42085503f21793eae095ded171952f"},
+ {id:12,q:"他の研究者のアイデア，分析・解析方法，データ，研究結果，論文又は用語を当該研究者の了解又は適切な表示なく流用することを（　）という",c:["ねつ造","改ざん","盗用","目的外使用"],h:"d569719b6a2b0ee8baa897fe44acb4834c31643a0bc9fb8f954c965f2975da68"},
+ {id:13,q:"（　）を十分に調べずに，過去に研究の例があるにもかかわらず，独自のアイデアと思って研究を進めている場合も，研究への信頼性を低下させる",c:["先行研究","先行事例","先行人物","先行学習"],h:"1b09dd9b3f937f6a44127ca5fd12e75248365137713e003a04378c5b174bf0eb"},
+ {id:14,q:"研究を行う人が知っているべき研究倫理を知らなかったということは（　）しない",c:["通用","該当","適応","正解"],h:"04a760f2595eb5a7ac5f964f2721bcbabe6fc04292511de3db14a7e78f169231"},
+ {id:15,q:"レポートや卒論を執筆する際に，Web上から勝手に画像やデータ，文章をコピペして用いることは（　）になる",c:["ねつ造","改ざん","盗用","目的外使用"],h:"e4039da8b0115d8f6c62fcd15454a49dc1c5c5e4013cc800890be3da24361f90"},
+ {id:16,q:"レポートや卒論を執筆する際に，他人の画像やデータ，文章等を使用する場合は，その（　）を明記して使用する",c:["出典","出所","名前","題名"],h:"13fce6e5d79a19b1d564e968eb055a4bb6b3e8693217dcae3c288074edaadcac"},
+ {id:17,q:"研究において，（　）を立てることは，欠くことのできない重要なステップである",c:["研究計画","研究成果","研究予定","研究報告"],h:"fa2b1b8950d0f0846c5e658b42728fb19760fb5b03ea83002b811eaa4cbfff94"},
+ {id:18,q:"研究の（　）を達成しようとするうえで，研究計画をきちんと立てることが大切である",c:["目的","成果","目標","予定"],h:"9f2b55fe91335c0231bdd41d048c587e487c08e2f34e651e041462f3c9329e50"},
+ {id:19,q:"研究計画を立てる作業は，これまでに行われている研究内容や結果を（　）することから始まる",c:["調査・学習","検討・学習","調査・分析","検討・分析"],h:"b67f2c60b28d036ff5196b1977470c1d4f7ac4e0f2c8c9a100a39ac466a7386f"},
+ {id:20,q:"研究計画を立てる際は，具体的に（　）な研究の内容を検討することが大切である",c:["実現可能","計画可能","把握可能","到達可能"],h:"2320f2471f85e0bbcbe45f5ad5ebb6de31cfd79c00aa8985b466474db9b9b499"},
+ {id:21,q:"研究計画を立てる際は，研究（　）や研究実施期間，発表方法などを整理し，研究計画を作成することが大切である",c:["方法","方策","論文","報告"],h:"39eadcac4ae57ae5c4d5762344ded4ad8085e0261c78732ed5688c57e2d147c8"},
+ {id:22,q:"どのようなことがすでに報告されていて，何がまだ分かっていないのか，研究する内容についての知識を得ることは，研究の（　）を確保するうえで大切である",c:["オリジナリティ","クオリティ","ユニーク","ブラッシュアップ"],h:"28b1f18f9365a5a3af93563581ad50eae29b4ed9cb9531403d916439c4c9e824"},
+ {id:23,q:"研究計画を立てる際は，研究の動機や研究を通じて，何を（　）を具体化することが大切である",c:["明らかにしたいか","調査したいか","記述したいか","把握したいか"],h:"701499fabf6e7b8bd0d47bbce7b23526dc413b96495e93616471cce7766e8964"},
+ {id:24,q:"データを収集するまでには，（　）を導き出すために必要なデータの数について検討しておくことが重要である",c:["結論","序論","本論","中論"],h:"8b2d284d22f6fb9b0c6c0f0d542b6da0a06306dd0ad79ff91dbc84b459e01b71"},
+ {id:25,q:"データ数や収集方法が適切でないと，（　）に対する答えが得られないという問題が生じてしまう",c:["研究目的","研究方法","研究成果","研究目標"],h:"6fcf86bf5aee627456445daf372e1b44b8d40fea7995f73fe5d2468c81e76066"},
+ {id:26,q:"研究の過程は，研究（　）に記録をする",c:["ノート","論文","書籍","報告"],h:"570cedb3b720fa00b67982949a242be1212e30b9b82ce70d512b38549458f0a9"},
+ {id:27,q:"研究ノートには実験方法，実験の結果などを（　）記録していく",c:["その都度","途中で","最初に","最後に"],h:"8cbf9eaff2eeb2d5c9e9bf06809a952c8f42af11cdb0a4dbbb144fee7bc17e5b"},
+ {id:28,q:"研究ノートは十分なサンプル数の実験が終わった後に（　）をまとめるために用いることができる",c:["研究成果","研究目的","研究方法","研究対象"],h:"a5c3764dfc6a2fc2248e3e1ee8e1eb5b4aa6cdfbb0567435bf6a526016e61ab6"},
+ {id:29,q:"研究ノートには，得られた結果通りにそのまま（　）に記録する必要がある",c:["正直","正確","不正確","真面目"],h:"a66fdec3367d4e3e81845941d54cfd4403825af789e07199feab290ac18d2d04"},
+ {id:30,q:"研究ノートを作成することは，自分たちが（　）な研究を行ってきた証拠にもなる",c:["誠実","真面目","丁寧","正確"],h:"c932aaa6d679215eda8a860eb7b306351a0809031edcbbfe437806fb27728937"},
+ {id:31,q:"データを分析する際には，（　）という手法を理解した上で進めることが大切である",c:["統計","集計","分析","調査"],h:"7b98b9e826c978980bc442b3f942a8fb067880cdd05db2803eb2db05de5e2a20"},
+ {id:32,q:"データを収集しても，最後にデータ解析の問題を理解していないと，研究の（　）性が問われることにもなる",c:["信憑","信頼","信用","正確"],h:"ca07a535d8ef94b6e9764b46075b2258f4869b79f514aaecc417e6d833855cfd"},
+ {id:33,q:"研究成果を公表するときは，研究結果を（　）に表現することが重要である",c:["正確","現実的","几帳面","簡単"],h:"e82947b126bf0e9f50df39df829acba8a477faddd0141c319b8a162c08d358f8"},
+ {id:34,q:"一緒に（　）を行った人だけを発表のメンバーとするのが一般的である",c:["研究活動","執筆活動","研究調査","資料収集"],h:"a520323ec40e33bdafb19fb5396969bc2ddc42e742b443a3136dd9d6590dde58"},
+ {id:35,q:"誠実な研究活動とは，正しい研究計画を立てて，安全で適切な方法によりデータを収集・解析し，成果を正しく発表するという「（　）」によって成り立っている",c:["信頼","信用","実績","誠実"],h:"79cd7c8fe44254628d85e66d053a7b10d3234e3b22992893331ab2fe1aed693d"}
 ];
 const TOTAL = QUESTIONS.length;
 const QMAP = Object.fromEntries(QUESTIONS.map(q=>[q.id,q]));
@@ -191,7 +200,42 @@ const fmt = ms => ms ? new Date(ms).toLocaleString("ja-JP",{year:"numeric",month
 const dur = sec => sec==null ? "—" : (sec>=60 ? Math.floor(sec/60)+"分"+(sec%60)+"秒" : sec+"秒");
 const blankify = t => esc(t).replace("（　）",'<span class="blank">&nbsp;</span>');
 function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-function render(html){$app.innerHTML=html;window.scrollTo(0,0);}
+function render(html){setProtect(false);$app.innerHTML=html;window.scrollTo(0,0);}
+const SALT="nbu-rec-2026";
+async function sha256(t){const b=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,"0")).join("");}
+async function isCorrect(id,v){return (await sha256(`${SALT}|${id}|${v}`))===QMAP[id].h;}
+
+/* ---------- 正解画面の保護（透かし・撮りにくくする工夫） ---------- */
+let PROTECT=false;
+function setProtect(on){
+  PROTECT=on;
+  document.body.classList.toggle("protect",on);
+  document.body.classList.remove("shield");
+  if(on) drawWatermark();
+}
+function drawWatermark(){
+  const P=S.profile||{}, who=S.isTeacher?(S.user?.email||""):`${P.studentId||""} ${P.lastName||""} ${P.firstName||""}`;
+  const t=`${who}　${new Date().toLocaleString("ja-JP")}`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="420" height="200"><text x="210" y="100" text-anchor="middle" transform="rotate(-24 210 100)" font-family="sans-serif" font-size="15" font-weight="700" fill="#1d3557" fill-opacity="0.13">${esc(t)}</text></svg>`;
+  document.getElementById("wm").style.backgroundImage=`url("data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}")`;
+}
+function shield(on){if(PROTECT)document.body.classList.toggle("shield",on);}
+["contextmenu","copy","cut","dragstart","selectstart"].forEach(ev=>document.addEventListener(ev,e=>{if(PROTECT)e.preventDefault();}));
+document.addEventListener("keydown",e=>{
+  if(!PROTECT)return;
+  const k=(e.key||"").toLowerCase();
+  if(k==="printscreen"||((e.ctrlKey||e.metaKey)&&["p","s","c","u"].includes(k))||(e.metaKey&&e.shiftKey)||(e.key==="Meta"||e.key==="OS")){e.preventDefault();shield(true);}
+});
+document.addEventListener("keyup",e=>{
+  if(!PROTECT)return;
+  if((e.key||"").toLowerCase()==="printscreen"){try{navigator.clipboard.writeText("");}catch(_){}shield(true);setTimeout(()=>shield(false),1500);}
+  if(e.key==="Meta"||e.key==="OS")setTimeout(()=>shield(false),300);
+});
+window.addEventListener("blur",()=>shield(true));
+window.addEventListener("focus",()=>shield(false));
+document.addEventListener("visibilitychange",()=>shield(document.hidden));
+window.addEventListener("beforeprint",()=>shield(true));
+window.addEventListener("afterprint",()=>shield(false));
 function domainOK(email){email=(email||"").toLowerCase();return email.endsWith("@"+ALLOWED_DOMAIN)||email.endsWith("."+ALLOWED_DOMAIN);}
 
 if (firebaseConfig.apiKey.includes("ここに")) {
@@ -328,8 +372,9 @@ function cancelTest(){
 }
 async function submitTest(){
   const T=S.test; if(!T)return;
+  document.getElementById("submitBtn").disabled=true;
   if(Object.keys(T.ans).length<TOTAL){alert("未回答の問題があります。");return;}
-  const results=T.order.map((o,i)=>({no:i+1,id:o.id,your:T.ans[o.id],ok:T.ans[o.id]===QMAP[o.id].a}));
+  const results=await Promise.all(T.order.map(async(o,i)=>({no:i+1,id:o.id,your:T.ans[o.id],ok:await isCorrect(o.id,T.ans[o.id])})));
   const score=results.filter(r=>r.ok).length;
   const now=Date.now();
   const rec={score,total:TOTAL,startedAt:T.startedAt,submittedAt:now,
@@ -347,7 +392,7 @@ async function saveAttempt(rec){
     await db.ref("attempts/"+uid).push(rec);
     S.attempts.push(rec);
     if(rec.score===TOTAL && !S.passed){
-      const ps={passedAt:rec.submittedAt,attemptNo:rec.attemptNo,studentId:P.studentId,name:P.lastName+" "+P.firstName};
+      const ps={passedAt:rec.submittedAt,attemptNo:rec.attemptNo,studentId:P.studentId,name:P.lastName+" "+P.firstName,answers:Object.fromEntries(S.lastResult.results.map(r=>[r.id,r.your]))};
       await db.ref("passed/"+uid).set(ps); S.passed=ps;
     }
     S.lastResult.saved=true; S.lastResult.error=null;
@@ -360,7 +405,7 @@ function viewResult(){
     const q=QMAP[r.id];
     return `<div class="res ${r.ok?"o":"x"}" data-ok="${r.ok}"><div class="mark ${r.ok?"o":"x"}" aria-label="${r.ok?"正解":"不正解"}">${r.ok?"○":"×"}</div>
       <div><div class="qn">第${r.no}問</div><div>${blankify(q.q)}</div>
-      <div class="yours">あなたの回答：<b>${esc(r.your)}</b>${full?`　<span class="key">正解：${esc(q.a)}</span>`:""}</div></div></div>`;
+      <div class="yours">あなたの回答：<b>${esc(r.your)}</b>${full?`　<span class="key">正解</span>`:""}</div></div></div>`;
   }).join("");
   const back=S.preview?`<button class="btn sub" onclick="viewTeacher()">教員画面に戻る</button>`:`<button class="btn sub" onclick="viewHome()">マイページへ</button>`;
   render(`<div class="sheet">
@@ -377,10 +422,13 @@ function viewResult(){
     ${full?"":`<label class="muted"><input type="checkbox" onchange="document.querySelectorAll('.res[data-ok=true]').forEach(e=>e.style.display=this.checked?'none':'')"> ×の問題だけ表示</label>`}
     ${list}
   </div>`);
+  if(full) setProtect(true);
 }
 function viewKey(){
-  const list=QUESTIONS.map(q=>`<div class="res o"><div class="mark o">${q.id}</div><div><div>${blankify(q.q)}</div><div class="key">正解：${esc(q.a)}</div></div></div>`).join("");
-  render(`<div class="sheet"><h2>正解一覧</h2><div class="btns" style="margin-top:0"><button class="btn sub small" onclick="viewHome()">マイページへ</button></div>${list}</div>`);
+  const A=(S.passed&&S.passed.answers)||{};
+  const list=QUESTIONS.map(q=>`<div class="res o"><div class="mark o">${q.id}</div><div><div>${blankify(q.q)}</div><div class="key">正解：${esc(A[q.id]??"（記録なし）")}</div></div></div>`).join("");
+  render(`<div class="sheet"><h2>正解一覧</h2><p class="muted">この画面には学籍番号と氏名の透かしが入ります。</p><div class="btns" style="margin-top:0"><button class="btn sub small" onclick="viewHome()">マイページへ</button></div>${list}</div>`);
+  setProtect(true);
 }
 
 /* =========================================================
@@ -390,6 +438,7 @@ async function loadTeacher(){
   render(`<div class="sheet"><p>読み込み中です…</p></div>`);
   try{
     const [st,at,ps]=await Promise.all([db.ref("students").get(),db.ref("attempts").get(),db.ref("passed").get()]);
+    const key={};Object.values(ps.val()||{}).forEach(p=>Object.assign(key,p.answers||{}));
     const students=st.val()||{}, attempts=at.val()||{}, passed=ps.val()||{};
     const list=Object.entries(students).map(([uid,p])=>{
       const as=Object.values(attempts[uid]||{}).sort((x,y)=>x.submittedAt-y.submittedAt);
@@ -397,7 +446,7 @@ async function loadTeacher(){
         best:as.length?Math.max(...as.map(a=>a.score)):null,
         last:as.length?as[as.length-1].submittedAt:null,passed:passed[uid]||null};
     }).sort((a,b)=>String(a.studentId).localeCompare(String(b.studentId)));
-    S.t={list,loadedAt:Date.now()};
+    S.t={list,key,loadedAt:Date.now()};
     viewTeacher();
   }catch(e){
     render(`<div class="sheet"><div class="err">データを読み込めませんでした（${esc(e.message)}）。Firebaseのルールに教員のアドレスが入っているか確認してください。</div></div>`);
@@ -420,8 +469,8 @@ function viewTeacher(){
     const cnt={},wr={};QUESTIONS.forEach(q=>{cnt[q.id]=0;wr[q.id]=0;});
     L.forEach(s=>s.attempts.forEach(a=>{QUESTIONS.forEach(q=>cnt[q.id]++);String(a.wrong||"").split(",").filter(Boolean).forEach(id=>wr[id]=(wr[id]||0)+1);}));
     const rows=QUESTIONS.map(q=>({q,rate:cnt[q.id]?(1-wr[q.id]/cnt[q.id]):null,w:wr[q.id]})).sort((a,b)=>(a.rate??2)-(b.rate??2))
-      .map(r=>`<tr><td>No.${r.q.id}</td><td>${r.rate==null?"—":Math.round(r.rate*100)+"%"}</td><td>${r.w}回</td><td class="wrap">${blankify(r.q.q)}<br><span class="key">正解：${esc(r.q.a)}</span></td></tr>`).join("");
-    pane=`<p class="muted">全受験を通した問題ごとの正答率です（低い順）。つまずきやすい問題の確認に使えます。</p><div class="tw"><table><tr><th>問題</th><th>正答率</th><th>誤答数</th><th>問題文</th></tr>${rows}</table></div>`;
+      .map(r=>`<tr><td>No.${r.q.id}</td><td>${r.rate==null?"—":Math.round(r.rate*100)+"%"}</td><td>${r.w}回</td><td class="wrap">${blankify(r.q.q)}<br><span class="key">正解：${esc(S.t.key[r.q.id]??"（満点到達者が出ると表示）")}</span></td></tr>`).join("");
+    pane=`<p class="muted">全受験を通した問題ごとの正答率です（低い順）。正解はソースに含めていないため，満点到達者の記録から表示します。</p><div class="tw"><table><tr><th>問題</th><th>正答率</th><th>誤答数</th><th>問題文</th></tr>${rows}</table></div>`;
   }
   const tb=(k,l)=>`<button class="${S.tab===k?"on":""}" onclick="S.tab='${k}';viewTeacher()">${l}</button>`;
   render(`<div class="sheet"><h2>教員画面</h2>
