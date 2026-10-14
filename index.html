@@ -37,6 +37,8 @@ p{margin:0 0 12px}
 .btn:hover{background:var(--ink-soft)}
 .btn:disabled{background:#9aa6b4;cursor:not-allowed}
 .btn.sub{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+.btn.danger{background:var(--ng);color:#fff}
+.btn.danger:hover{background:#962f27}
 .btn.small{padding:6px 12px;font-size:.85rem;font-weight:400}
 .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
 :focus-visible{outline:3px solid #f2b705;outline-offset:2px}
@@ -99,6 +101,9 @@ tr.click:hover td{background:#f5f8fc}
 .tabs{display:flex;gap:4px;border-bottom:2px solid var(--ink);margin-bottom:0;flex-wrap:wrap}
 .tabs button{background:#fff;border:1px solid var(--line);border-bottom:none;padding:8px 16px;font:inherit;cursor:pointer;border-radius:6px 6px 0 0;color:var(--pencil)}
 .tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.danger-zone{border:1px solid #e3b5b0;background:#fdf6f5;border-radius:6px;padding:16px;margin-top:24px}
+.danger-zone h3{margin-top:0;color:var(--ng)}
+td.ck,th.ck{width:2.5em;text-align:center}
 .tabpane{border-top:none;border-radius:0 0 6px 6px}
 .wm{position:fixed;inset:0;z-index:50;pointer-events:none;display:none;background-repeat:repeat}
 body.protect .wm{display:block}
@@ -462,9 +467,10 @@ function viewTeacher(){
     pane=P.length?`<div class="tw"><table><tr><th>学籍番号</th><th>氏名</th><th>満点到達日時</th><th>到達までの受験回数</th></tr>${rows}</table></div>`:`<p class="muted">まだ満点に到達した学生はいません。</p>`;
     pane+=`<div class="btns"><button class="btn sub small" onclick="csvPassed()">満点到達者をCSVで保存</button></div>`;
   }else if(S.tab==="all"){
-    const rows=L.map(s=>`<tr class="click" onclick="viewDetail('${s.uid}')"><td>${esc(s.studentId)}</td><td>${esc(s.name)}</td><td>${status(s)}</td><td>${s.count}回</td><td>${s.best==null?"—":s.best+" / "+TOTAL}</td><td>${fmt(s.last)}</td></tr>`).join("");
-    pane=L.length?`<p class="muted">行を押すと，その学生の受験の経緯を確認できます。</p><div class="tw"><table><tr><th>学籍番号</th><th>氏名</th><th>状況</th><th>受験回数</th><th>最高点</th><th>最終受験</th></tr>${rows}</table></div>`:`<p class="muted">まだ登録した学生はいません。</p>`;
+    const rows=L.map(s=>`<tr class="click" onclick="viewDetail('${s.uid}')"><td class="ck" onclick="event.stopPropagation()"><input type="checkbox" class="selStu" value="${s.uid}" aria-label="${esc(s.name)}を選択" onchange="updSel()"></td><td>${esc(s.studentId)}</td><td>${esc(s.name)}</td><td>${status(s)}</td><td>${s.count}回</td><td>${s.best==null?"—":s.best+" / "+TOTAL}</td><td>${fmt(s.last)}</td></tr>`).join("");
+    pane=L.length?`<p class="muted">行を押すと，その学生の受験の経緯を確認できます。</p><div class="tw"><table><tr><th class="ck"><input type="checkbox" aria-label="すべて選択" onchange="document.querySelectorAll('.selStu').forEach(c=>c.checked=this.checked);updSel()"></th><th>学籍番号</th><th>氏名</th><th>状況</th><th>受験回数</th><th>最高点</th><th>最終受験</th></tr>${rows}</table></div>`:`<p class="muted">まだ登録した学生はいません。</p>`;
     pane+=`<div class="btns"><button class="btn sub small" onclick="csvStatus()">全学生の状況をCSVで保存</button><button class="btn sub small" onclick="csvHistory()">全受験履歴をCSVで保存</button></div>`;
+    if(L.length) pane+=`<div class="btns"><button class="btn danger small" id="bulkDel" onclick="bulkDelete()" disabled>選択した学生を削除</button></div>`;
   }else{
     const cnt={},wr={};QUESTIONS.forEach(q=>{cnt[q.id]=0;wr[q.id]=0;});
     L.forEach(s=>s.attempts.forEach(a=>{QUESTIONS.forEach(q=>cnt[q.id]++);String(a.wrong||"").split(",").filter(Boolean).forEach(id=>wr[id]=(wr[id]||0)+1);}));
@@ -499,7 +505,42 @@ function viewDetail(uid){
     ${often.length?`<div class="info">繰り返し間違えた問題：${often.map(([id,v])=>`No.${id}（${v}回）`).join("，")}</div>`:""}
     <h3>受験の経緯</h3>
     ${s.count?`<div class="tw"><table><tr><th>回</th><th>受験日時</th><th>得点</th><th>所要時間</th><th>間違えた問題</th></tr>${rows}</table></div>`:`<p class="muted">まだ受験していません。</p>`}
+    <h3>登録情報の修正</h3>
+    <p class="muted">学籍番号や氏名の入力ミスを直せます。受験記録はそのまま残ります。</p>
+    <label class="f" for="eSid">学籍番号</label><input type="text" id="eSid" value="${esc(s.studentId)}">
+    <div class="row2">
+      <div><label class="f" for="eLn">姓</label><input type="text" id="eLn" value="${esc(s.lastName)}"></div>
+      <div><label class="f" for="eFn">名</label><input type="text" id="eFn" value="${esc(s.firstName)}"></div>
+    </div>
+    <div class="btns"><button class="btn small" onclick="saveEdit('${s.uid}')">修正を保存</button></div>
+    <div class="danger-zone">
+      <h3>この学生を削除</h3>
+      <p>登録情報，すべての受験記録，満点の記録を削除します。<b>元に戻せません。</b>削除後にこの学生がログインすると，登録からやり直しになります。</p>
+      <button class="btn danger small" onclick="deleteStudents(['${s.uid}'])">この学生を削除</button>
+    </div>
   </div>`);
+}
+function updSel(){const n=document.querySelectorAll('.selStu:checked').length,b=document.getElementById("bulkDel");if(b){b.disabled=!n;b.textContent=n?`選択した${n}人を削除`:"選択した学生を削除";}}
+function bulkDelete(){deleteStudents([...document.querySelectorAll('.selStu:checked')].map(c=>c.value));}
+async function deleteStudents(uids){
+  const T=S.t.list.filter(x=>uids.includes(x.uid)); if(!T.length)return;
+  const names=T.slice(0,10).map(x=>`${x.studentId} ${x.name}`).join("\n")+(T.length>10?`\n…ほか${T.length-10}人`:"");
+  if(!confirm(`次の${T.length}人を削除します。受験記録と満点の記録もすべて消え，元に戻せません。\n\n${names}`))return;
+  if(T.length>=3){const v=prompt(`確認のため「${T.length}」と入力してください。`);if(v===null)return;if(v.trim()!==String(T.length)){alert("入力が一致しないため，削除を中止しました。");return;}}
+  const upd={};T.forEach(x=>{upd["students/"+x.uid]=null;upd["attempts/"+x.uid]=null;upd["passed/"+x.uid]=null;});
+  try{await db.ref().update(upd);alert(`${T.length}人を削除しました。`);S.tab="all";await loadTeacher();}
+  catch(e){alert("削除できませんでした（"+e.message+"）。Firebaseのルールが最新か確認してください。");}
+}
+async function saveEdit(uid){
+  const z2h=v=>v.replace(/[Ａ-Ｚａ-ｚ０-９]/g,c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0));
+  const sid=z2h(document.getElementById("eSid").value.trim()).toUpperCase();
+  const ln=document.getElementById("eLn").value.trim(), fn=document.getElementById("eFn").value.trim();
+  if(!sid||!ln||!fn){alert("学籍番号・姓・名をすべて入力してください。");return;}
+  const s=S.t.list.find(x=>x.uid===uid);
+  const upd={[`students/${uid}/studentId`]:sid,[`students/${uid}/lastName`]:ln,[`students/${uid}/firstName`]:fn};
+  if(s&&s.passed){upd[`passed/${uid}/studentId`]=sid;upd[`passed/${uid}/name`]=ln+" "+fn;}
+  try{await db.ref().update(upd);await loadTeacher();viewDetail(uid);alert("修正を保存しました。");}
+  catch(e){alert("保存できませんでした（"+e.message+"）。Firebaseのルールが最新か確認してください。");}
 }
 
 /* ---------- CSV ---------- */
